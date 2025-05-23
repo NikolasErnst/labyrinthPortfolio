@@ -1,31 +1,61 @@
 package com.example.SEPortfolioLabyrinth;
-
+import org.openapitools.client.api.DefaultApi;
+import org.openapitools.client.model.GameDto;
+import org.openapitools.client.model.GameInputDto;
+import org.openapitools.client.model.GameStatusDto;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.sql.Array;
+
 @Component
 public class MazeRunner {
 
-    void solveMaze(){
+    @Autowired
+    Direction direction;
 
+    void solveMaze() {
+        DefaultApi defaultApi = new DefaultApi();
+        int directionIndex;
 
-        //Methode oder Klasse vielleicht Array die Hoch Rechts Runter Links versucht
+        startGame(defaultApi);
+        BigDecimal gameId =BigDecimal.valueOf(0);
 
-        //Instanz Kompassklasse
-        //Index i;
+        while (!gameErfolg(gameId,defaultApi)) {
+            directionIndex = 0;
+            move(directionIndex);
 
-        //Start game
+            if(!getMoveErfolg()){
+                moveSuccessfulOldMoves();
+                move(++directionIndex);
+            }
+        }
+    }
 
+    void startGame(DefaultApi defaultApi) {
+        GameInputDto gameInput = new GameInputDto();
+        gameInput.setGroupName("Niklas Neuweiler, Nikolas Ernst");
 
-        //while !sucess
-        // i=0;
-        //moveversuch[i]
+        GameDto result = defaultApi.gamePost(gameInput);
+    }
 
-        //if fail FAILTREE
-        //hole alle alten steps
-        //falls alle alten steps nur 1 nichts
-        // gehe alle alten steps -1
-        //Versuch Kompassklasse [++i]
+    void move(int direction) {
 
     }
 
+    void moveSuccessfulOldMoves() {
+        //hole alle alten steps
+        //falls alle alten steps nur 1 nichts
+        // gehe alle alten steps -1
+    }
 
+    boolean getMoveErfolg(){
+        return false;
+    }
+
+    boolean gameErfolg(BigDecimal gameId, DefaultApi defaultApi) {
+        GameDto currentGame = defaultApi.gameGameIdGet(gameId);
+        return (currentGame.getStatus() == GameStatusDto.SUCCESS);
+    }
 }

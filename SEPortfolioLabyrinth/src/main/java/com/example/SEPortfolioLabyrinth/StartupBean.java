@@ -15,16 +15,6 @@ public class StartupBean {
 
     @PostConstruct
     public void init() {
-        DefaultApi defaultApi = new DefaultApi();
-
-        GameInputDto gameInput = new GameInputDto();
-        gameInput.setGroupName("Niklas Neuweiler, Nikolas Ernst");
-
-        GameDto result = defaultApi.gamePost(gameInput);
         mazeRunner.solveMaze();
-
-
-
-
     }
 }
