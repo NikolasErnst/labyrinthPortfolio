@@ -1,15 +1,9 @@
 package com.example.SEPortfolioLabyrinth;
 import org.openapitools.client.api.DefaultApi;
-import org.openapitools.client.model.GameDto;
-import org.openapitools.client.model.GameInputDto;
-import org.openapitools.client.model.GameStatusDto;
-import org.openapitools.client.model.MoveDto;
-import org.openapitools.client.model.MoveInputDto;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.openapitools.client.model.*;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,8 +42,33 @@ public class MazeRunner {
         GameDto result = defaultApi.gamePost(gameInput);
     }
 
-    void move(BigDecimal gameID, MoveInputDto direction) {
-        defaultApi.gameGameIdMovePost(gameID, direction);
+    boolean move(BigDecimal gameID, int directionIndex) {
+
+        DirectionDto direction = null;
+
+        switch(directionIndex){
+            case 0:
+                direction = direction.UP;
+                break;
+            case 1:
+                direction = direction.RIGHT;
+                break;
+            case 2:
+                direction = direction.DOWN;
+                break;
+            case 3:
+                direction = direction.LEFT;
+                break;
+        }
+
+        MoveInputDto moveInput = new MoveInputDto();
+        moveInput.direction(direction);
+
+        MoveDto moveOutput = defaultApi.gameGameIdMovePost(gameID, moveInput);
+
+        System.out.println(moveOutput.getMoveStatus());
+
+        return moveOutput.getMoveStatus().equals(MoveStatusDto.MOVED);
     }
 
     void moveSuccessfulOldMoves() {
