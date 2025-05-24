@@ -7,27 +7,28 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.openapitools.client.model.MoveStatusDto.BLOCKED;
-import static org.openapitools.client.model.MoveStatusDto.FAILED;
+import static org.openapitools.client.model.MoveStatusDto.*;
 
 @Component
 public class MazeRunner {
 
     final DefaultApi defaultApi = new DefaultApi();
 
-
     //@Autowired
     //Direction direction;
 
     void solveMaze() {
-        int directionIndex;
 
         GameDto game = startGame();
         BigDecimal gameId = game.getGameId();
 
        while (!gameErfolg(gameId)) {
-           directionIndex = 0;
+           int[] directionIndex = {0, 1, 2, 3};
            MoveStatusDto prevMove = move(gameId,directionIndex);
+
+           if(prevMove.equals(MOVED)){
+                directionIndex = 0;
+           }
 
            if(prevMove.equals(BLOCKED)){
                move(gameId, ++directionIndex);
@@ -38,7 +39,7 @@ public class MazeRunner {
 
                gameId = startGame().getGameId();
 
-               moveSuccessfulOldMoves(oldGameId);
+               moveSuccessfulOldMoves(gameId,oldGameId);
                move(gameId, ++directionIndex);
            }
        }
@@ -82,12 +83,22 @@ public class MazeRunner {
         return moveOutput.getMoveStatus();
     }
 
-    void moveSuccessfulOldMoves(BigDecimal oldGameId) {
+    void moveSuccessfulOldMoves(BigDecimal newGameId, BigDecimal oldGameId) {
 
-    }
+        List<MoveDto> oldMoves = getMoveHistory(oldGameId);
 
-    boolean getMoveErfolg(){
-        return false;
+        if(oldMoves.isEmpty() || oldMoves.size() == 1){
+            return;
+        }
+
+        for (MoveDto move : oldMoves) {
+            if(move.getMoveStatus().equals(MOVED)){
+                MoveInputDto moveInput = new MoveInputDto();
+                moveInput.direction(move.getDirection());
+
+                defaultApi.gameGameIdMovePost(newGameId, moveInput);
+            }
+        }
     }
 
     boolean gameErfolg(BigDecimal gameId ) {
@@ -95,9 +106,9 @@ public class MazeRunner {
         return (currentGame.getStatus() == GameStatusDto.SUCCESS);
     }
 
-    public List<MoveDto> getMoveHistory(BigDecimal gameId) {
-        if (gameId != null) {
-            return defaultApi.gameGameIdMoveGet(gameId);
+    public List<MoveDto> getMoveHistory(BigDecimal oldGameId) {
+        if (oldGameId != null) {
+            return defaultApi.gameGameIdMoveGet(oldGameId);
         }
         return new ArrayList<>();
     }
