@@ -4,6 +4,7 @@ import org.openapitools.client.model.GameDto;
 import org.openapitools.client.model.GameInputDto;
 import org.openapitools.client.model.GameStatusDto;
 import org.openapitools.client.model.MoveDto;
+import org.openapitools.client.model.MoveInputDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -15,19 +16,21 @@ import java.util.List;
 @Component
 public class MazeRunner {
 
+    final DefaultApi defaultApi = new DefaultApi();
+
+
     //@Autowired
     //Direction direction;
 
     void solveMaze() {
-        DefaultApi defaultApi = new DefaultApi();
         int directionIndex;
 
-        startGame(defaultApi);
+        startGame();
         BigDecimal gameId =BigDecimal.valueOf(0);
 
         //getMoveHistory(BigDecimal.valueOf(700),defaultApi);
 
-       while (!gameErfolg(gameId,defaultApi)) {
+       while (!gameErfolg(gameId)) {
            directionIndex = 0;
            move(directionIndex);
 
@@ -38,15 +41,15 @@ public class MazeRunner {
        }
     }
 
-    void startGame(DefaultApi defaultApi) {
+    void startGame() {
         GameInputDto gameInput = new GameInputDto();
         gameInput.setGroupName("Niklas Neuweiler, Nikolas Ernst");
 
         GameDto result = defaultApi.gamePost(gameInput);
     }
 
-    void move(int direction) {
-
+    void move(BigDecimal gameID, MoveInputDto direction) {
+        defaultApi.gameGameIdMovePost(gameID, direction);
     }
 
     void moveSuccessfulOldMoves() {
@@ -59,12 +62,12 @@ public class MazeRunner {
         return false;
     }
 
-    boolean gameErfolg(BigDecimal gameId, DefaultApi defaultApi) {
+    boolean gameErfolg(BigDecimal gameId ) {
         GameDto currentGame = defaultApi.gameGameIdGet(gameId);
         return (currentGame.getStatus() == GameStatusDto.SUCCESS);
     }
 
-    public List<MoveDto> getMoveHistory(BigDecimal gameId, DefaultApi defaultApi) {
+    public List<MoveDto> getMoveHistory(BigDecimal gameId) {
         if (gameId != null) {
             return defaultApi.gameGameIdMoveGet(gameId);
         }
