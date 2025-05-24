@@ -3,17 +3,20 @@ import org.openapitools.client.api.DefaultApi;
 import org.openapitools.client.model.GameDto;
 import org.openapitools.client.model.GameInputDto;
 import org.openapitools.client.model.GameStatusDto;
+import org.openapitools.client.model.MoveDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.sql.Array;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class MazeRunner {
 
-    @Autowired
-    Direction direction;
+    //@Autowired
+    //Direction direction;
 
     void solveMaze() {
         DefaultApi defaultApi = new DefaultApi();
@@ -22,15 +25,17 @@ public class MazeRunner {
         startGame(defaultApi);
         BigDecimal gameId =BigDecimal.valueOf(0);
 
-        while (!gameErfolg(gameId,defaultApi)) {
-            directionIndex = 0;
-            move(directionIndex);
+        //getMoveHistory(BigDecimal.valueOf(700),defaultApi);
 
-            if(!getMoveErfolg()){
-                moveSuccessfulOldMoves();
-                move(++directionIndex);
-            }
-        }
+       while (!gameErfolg(gameId,defaultApi)) {
+           directionIndex = 0;
+           move(directionIndex);
+
+           if(!getMoveErfolg()){
+               moveSuccessfulOldMoves();
+               move(++directionIndex);
+           }
+       }
     }
 
     void startGame(DefaultApi defaultApi) {
@@ -57,5 +62,12 @@ public class MazeRunner {
     boolean gameErfolg(BigDecimal gameId, DefaultApi defaultApi) {
         GameDto currentGame = defaultApi.gameGameIdGet(gameId);
         return (currentGame.getStatus() == GameStatusDto.SUCCESS);
+    }
+
+    public List<MoveDto> getMoveHistory(BigDecimal gameId, DefaultApi defaultApi) {
+        if (gameId != null) {
+            return defaultApi.gameGameIdMoveGet(gameId);
+        }
+        return new ArrayList<>();
     }
 }
