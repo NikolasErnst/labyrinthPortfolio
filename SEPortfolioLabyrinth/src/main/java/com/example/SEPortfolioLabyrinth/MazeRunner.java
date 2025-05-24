@@ -7,6 +7,9 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.openapitools.client.model.MoveStatusDto.BLOCKED;
+import static org.openapitools.client.model.MoveStatusDto.FAILED;
+
 @Component
 public class MazeRunner {
 
@@ -19,30 +22,38 @@ public class MazeRunner {
     void solveMaze() {
         int directionIndex;
 
-        startGame();
-        BigDecimal gameId =BigDecimal.valueOf(0);
-
-        //getMoveHistory(BigDecimal.valueOf(700),defaultApi);
+        GameDto game = startGame();
+        BigDecimal gameId = game.getGameId();
 
        while (!gameErfolg(gameId)) {
            directionIndex = 0;
-           move(directionIndex);
+           MoveStatusDto prevMove = move(gameId,directionIndex);
 
-           if(!getMoveErfolg()){
-               moveSuccessfulOldMoves();
-               move(++directionIndex);
+           if(prevMove.equals(BLOCKED)){
+               move(gameId, ++directionIndex);
+           }
+
+           if(prevMove.equals(FAILED)){
+               BigDecimal oldGameId = gameId;
+
+               gameId = startGame().getGameId();
+
+               moveSuccessfulOldMoves(oldGameId);
+               move(gameId, ++directionIndex);
            }
        }
     }
 
-    void startGame() {
+    GameDto startGame() {
         GameInputDto gameInput = new GameInputDto();
         gameInput.setGroupName("Niklas Neuweiler, Nikolas Ernst");
 
         GameDto result = defaultApi.gamePost(gameInput);
+
+        return result;
     }
 
-    boolean move(BigDecimal gameID, int directionIndex) {
+    MoveStatusDto move(BigDecimal gameID, int directionIndex) {
 
         DirectionDto direction = null;
 
@@ -68,13 +79,11 @@ public class MazeRunner {
 
         System.out.println(moveOutput.getMoveStatus());
 
-        return moveOutput.getMoveStatus().equals(MoveStatusDto.MOVED);
+        return moveOutput.getMoveStatus();
     }
 
-    void moveSuccessfulOldMoves() {
-        //hole alle alten steps
-        //falls alle alten steps nur 1 nichts
-        // gehe alle alten steps -1
+    void moveSuccessfulOldMoves(BigDecimal oldGameId) {
+
     }
 
     boolean getMoveErfolg(){
