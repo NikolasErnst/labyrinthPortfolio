@@ -22,19 +22,22 @@ public class MazeRunner {
         GameDto game = startGame();
         BigDecimal gameId = game.getGameId();
 
-       while (!gameErfolg(gameId)) {
-           int[] directionIndex = {0, 1, 2, 3};
-           MoveStatusDto prevMove = move(gameId,directionIndex);
+        List<Integer> moveHistory = new ArrayList<>();
 
-           if(prevMove.equals(MOVED)){
+       while (!gameErfolg(gameId)) {
+
+           int[] directionIndex = {0, 1, 2, 3};
+           MoveStatusDto currentMove = move(gameId,directionIndex);
+
+           if(currentMove.equals(MOVED)){
                 directionIndex = 0;
            }
 
-           if(prevMove.equals(BLOCKED)){
+           if(currentMove.equals(BLOCKED)){
                move(gameId, ++directionIndex);
            }
 
-           if(prevMove.equals(FAILED)){
+           if(currentMove.equals(FAILED)){
                BigDecimal oldGameId = gameId;
 
                gameId = startGame().getGameId();
