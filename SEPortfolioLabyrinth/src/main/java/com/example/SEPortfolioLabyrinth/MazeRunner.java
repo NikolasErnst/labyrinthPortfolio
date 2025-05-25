@@ -5,7 +5,9 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.openapitools.client.model.MoveStatusDto.*;
 
@@ -14,38 +16,111 @@ public class MazeRunner {
 
     final DefaultApi defaultApi = new DefaultApi();
 
-    //@Autowired
-    //Direction direction;
+    private Set<Integer> failedDirections = new HashSet<>();
+    private DirectionDto lastSuccessfulMove = null;
 
     void solveMaze() {
-
         GameDto game = startGame();
         BigDecimal gameId = game.getGameId();
 
-        List<Integer> moveHistory = new ArrayList<>();
+        while (!gameErfolg(gameId)) {
+            int[] directionIndex = {0, 1, 2, 3};
 
-       while (!gameErfolg(gameId)) {
+            for (int i = 0; i < directionIndex.length; i++) {
 
-           int[] directionIndex = {0, 1, 2, 3};
-           MoveStatusDto currentMove = move(gameId,directionIndex);
+                if (lastSuccessfulMove != null && directionIndex[i] == getOppositeDirection(lastSuccessfulMove)) {
+                    continue;
+                }
 
-           if(currentMove.equals(MOVED)){
-                directionIndex = 0;
-           }
+                MoveStatusDto currentMove = move(gameId, directionIndex[i]);
 
-           if(currentMove.equals(BLOCKED)){
-               move(gameId, ++directionIndex);
-           }
+                if (currentMove.equals(MOVED)) {
+                    lastSuccessfulMove = getDirectionFromIndex(directionIndex[i]);
+                    failedDirections.clear();
+                    break;
+                }
 
-           if(currentMove.equals(FAILED)){
-               BigDecimal oldGameId = gameId;
+                if (currentMove.equals(BLOCKED)) {
+                    continue;
+                }
 
-               gameId = startGame().getGameId();
+                if (currentMove.equals(FAILED)) {
+                    failedDirections.add(directionIndex[i]);
 
-               moveSuccessfulOldMoves(gameId,oldGameId);
-               move(gameId, ++directionIndex);
-           }
-       }
+                    BigDecimal oldGameId = gameId;
+                    gameId = startGame().getGameId();
+
+                    moveSuccessfulOldMoves(gameId, oldGameId);
+                    lastSuccessfulMove = getLastMoveDirection(gameId);
+
+                    gameId = tryAllDirectionsExceptOppositeAndFailed(gameId, lastSuccessfulMove, oldGameId);
+                    break;
+                }
+            }
+        }
+        System.out.println("Finished maze.");
+        System.out.println(getMoveHistory(gameId));
+        System.out.println(gameErfolg(gameId));
+        System.exit(0);
+    }
+
+    private DirectionDto getLastMoveDirection(BigDecimal gameId) {
+        List<MoveDto> moveHistory = getMoveHistory(gameId);
+        if (!moveHistory.isEmpty()) {
+            return moveHistory.get(moveHistory.size() - 1).getDirection();
+        }
+        return null;
+    }
+
+    private DirectionDto getDirectionFromIndex(int index) {
+        switch(index) {
+            case 0: return DirectionDto.UP;
+            case 1: return DirectionDto.RIGHT;
+            case 2: return DirectionDto.DOWN;
+            case 3: return DirectionDto.LEFT;
+            default: return null;
+        }
+    }
+
+    private BigDecimal tryAllDirectionsExceptOppositeAndFailed(BigDecimal gameId, DirectionDto lastDirection, BigDecimal oldGameId) {
+        int oppositeDirection = getOppositeDirection(lastDirection);
+
+        for (int directionIndex = 0; directionIndex < 4; directionIndex++) {
+            if (directionIndex == oppositeDirection || failedDirections.contains(directionIndex)) {
+                continue;
+            }
+
+            MoveStatusDto moveResult = move(gameId, directionIndex);
+
+            if (moveResult.equals(MOVED)) {
+                lastSuccessfulMove = getDirectionFromIndex(directionIndex);
+                failedDirections.clear();
+                return gameId;
+            }
+
+            if (moveResult.equals(FAILED)) {
+                failedDirections.add(directionIndex);
+
+                gameId = startGame().getGameId();
+
+                moveSuccessfulOldMoves(gameId, oldGameId);
+
+                lastSuccessfulMove = getLastMoveDirection(gameId);
+
+                return tryAllDirectionsExceptOppositeAndFailed(gameId, lastDirection, oldGameId);
+            }
+        }
+        return gameId;
+    }
+
+    private int getOppositeDirection(DirectionDto direction) {
+        switch (direction) {
+            case UP: return 2;
+            case RIGHT: return 3;
+            case DOWN: return 0;
+            case LEFT: return 1;
+            default: return -1;
+        }
     }
 
     GameDto startGame() {
@@ -53,59 +128,48 @@ public class MazeRunner {
         gameInput.setGroupName("Niklas Neuweiler, Nikolas Ernst");
 
         GameDto result = defaultApi.gamePost(gameInput);
+        System.out.println("New game started with ID: " + result.getGameId());
 
         return result;
     }
 
     MoveStatusDto move(BigDecimal gameID, int directionIndex) {
-
-        DirectionDto direction = null;
-
-        switch(directionIndex){
-            case 0:
-                direction = direction.UP;
-                break;
-            case 1:
-                direction = direction.RIGHT;
-                break;
-            case 2:
-                direction = direction.DOWN;
-                break;
-            case 3:
-                direction = direction.LEFT;
-                break;
-        }
+        DirectionDto direction = getDirectionFromIndex(directionIndex);
 
         MoveInputDto moveInput = new MoveInputDto();
         moveInput.direction(direction);
 
         MoveDto moveOutput = defaultApi.gameGameIdMovePost(gameID, moveInput);
 
-        System.out.println(moveOutput.getMoveStatus());
-
         return moveOutput.getMoveStatus();
     }
 
     void moveSuccessfulOldMoves(BigDecimal newGameId, BigDecimal oldGameId) {
-
         List<MoveDto> oldMoves = getMoveHistory(oldGameId);
 
-        if(oldMoves.isEmpty() || oldMoves.size() == 1){
+        if (oldMoves.isEmpty() || oldMoves.size() == 1) {
             return;
         }
 
         for (MoveDto move : oldMoves) {
-            if(move.getMoveStatus().equals(MOVED)){
-                MoveInputDto moveInput = new MoveInputDto();
-                moveInput.direction(move.getDirection());
+            if (move.getMoveStatus().equals(MoveStatusDto.MOVED)) {
 
-                defaultApi.gameGameIdMovePost(newGameId, moveInput);
+                DirectionDto direction = move.getDirection();
+                MoveInputDto moveInput = new MoveInputDto();
+                moveInput.direction(direction);
+
+                MoveDto track = defaultApi.gameGameIdMovePost(newGameId, moveInput);
+
+                if (track.getMoveStatus().equals(MoveStatusDto.MOVED)) {
+                    lastSuccessfulMove = direction;
+                }
             }
         }
     }
 
-    boolean gameErfolg(BigDecimal gameId ) {
+    boolean gameErfolg(BigDecimal gameId) {
         GameDto currentGame = defaultApi.gameGameIdGet(gameId);
+        System.out.println(currentGame.toString());
         return (currentGame.getStatus() == GameStatusDto.SUCCESS);
     }
 
