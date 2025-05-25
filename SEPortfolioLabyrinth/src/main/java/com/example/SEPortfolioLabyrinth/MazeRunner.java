@@ -32,7 +32,11 @@ public class MazeRunner {
                     continue;
                 }
 
+                System.out.println("Try Move: " + getDirectionFromIndex(directionIndex[i]));
+
                 MoveStatusDto currentMove = move(gameId, directionIndex[i]);
+
+                System.out.println("Result: " + currentMove);
 
                 if (currentMove.equals(MOVED)) {
                     lastSuccessfulMove = getDirectionFromIndex(directionIndex[i]);
@@ -41,10 +45,13 @@ public class MazeRunner {
                 }
 
                 if (currentMove.equals(BLOCKED)) {
+                    System.out.println("Direction blocked, try next direction");
                     continue;
                 }
 
                 if (currentMove.equals(FAILED)) {
+                    System.out.println("Move Failed. Create new game and go to last valid status");
+
                     failedDirections.add(directionIndex[i]);
 
                     BigDecimal oldGameId = gameId;
@@ -92,12 +99,21 @@ public class MazeRunner {
             MoveStatusDto moveResult = move(gameId, directionIndex);
 
             if (moveResult.equals(MOVED)) {
+                System.out.println("Try Move: " + getDirectionFromIndex(directionIndex));
+
                 lastSuccessfulMove = getDirectionFromIndex(directionIndex);
                 failedDirections.clear();
                 return gameId;
             }
 
+            if (moveResult.equals(BLOCKED)) {
+                System.out.println("Direction blocked, try next direction.");
+                continue;
+            }
+
             if (moveResult.equals(FAILED)) {
+                System.out.println("Move Failed. Create new game and go to last valid status");
+
                 failedDirections.add(directionIndex);
 
                 gameId = startGame().getGameId();
