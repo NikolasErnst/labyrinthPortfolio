@@ -61,7 +61,6 @@ public class MazeRunner {
         System.out.println("Finished maze.");
         System.out.println(getMoveHistory(gameId));
         System.out.println(gameErfolg(gameId));
-        System.exit(0);
     }
 
     private DirectionDto getLastMoveDirection(BigDecimal gameId) {
