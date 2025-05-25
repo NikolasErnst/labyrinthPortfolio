@@ -65,9 +65,9 @@ public class MazeRunner {
                 }
             }
         }
-        System.out.println("Finished maze.");
+        System.out.println("Finished maze. This is your move history");
         System.out.println(getMoveHistory(gameId));
-        System.out.println(gameErfolg(gameId));
+        System.out.println("Game Finished, Thanks for playing!");
     }
 
     private DirectionDto getLastMoveDirection(BigDecimal gameId) {
@@ -96,10 +96,13 @@ public class MazeRunner {
                 continue;
             }
 
+            System.out.println("Try Move: " + getDirectionFromIndex(directionIndex));
+
             MoveStatusDto moveResult = move(gameId, directionIndex);
 
+            System.out.println("Result: " + moveResult);
+
             if (moveResult.equals(MOVED)) {
-                System.out.println("Try Move: " + getDirectionFromIndex(directionIndex));
 
                 lastSuccessfulMove = getDirectionFromIndex(directionIndex);
                 failedDirections.clear();
