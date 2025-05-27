@@ -11,7 +11,10 @@ import java.util.Set;
 @Getter
 @Component
 public class MazeStateManager {
+    @Getter
     private Set<Integer> failedDirections = new HashSet<>();
+
+    @Getter
     @Setter
     private DirectionDto lastSuccessfulMove = null;
 
